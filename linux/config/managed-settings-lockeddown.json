@@ -1,0 +1,55 @@
+{
+  "_comment": [
+    "Claude Desktop 3P - maximum lockdown, Amazon Bedrock, Linux.",
+    "Install to /etc/claude-desktop/managed-settings.json (mode 0644, root-owned).",
+    "",
+    "IMPORTANT: this does NOT achieve zero Anthropic egress on Linux. There is no",
+    "Linux offline installer, so the app still fetches its VM workspace bundle and",
+    "Claude CLI from downloads.claude.ai when a Cowork session starts. That host",
+    "must be allowlisted or Cowork and Code sessions will not start.",
+    "Zero-egress is achievable on Windows only. See docs/06-LINUX-INSTALL.md.",
+    "",
+    "Native JSON types here - real booleans and arrays."
+  ],
+
+  "inferenceProvider": "bedrock",
+  "inferenceBedrockRegion": "us-east-1",
+  "inferenceBedrockSsoStartUrl": "https://my-sso-portal.awsapps.com/start",
+  "inferenceBedrockSsoRegion": "us-east-1",
+  "inferenceBedrockSsoAccountId": "123456789012",
+  "inferenceBedrockSsoRoleName": "BedrockAccess",
+
+  "_privatelink": "Allowlist this host instead of the public runtime host.",
+  "_inferenceBedrockBaseUrl": "https://bedrock-runtime.vpce-0abc123.us-east-1.vpce.amazonaws.com",
+
+  "_deploymentOrganizationUuid": "00000000-0000-0000-0000-000000000000",
+
+  "_egress_note": "disableEssentialTelemetry is deliberately omitted. Setting it opts you into a manual support model with zero remote visibility for Anthropic, and the firewall already blocks those hosts.",
+  "disableAutoUpdates": true,
+  "disableNonessentialTelemetry": true,
+  "disableNonessentialServices": true,
+  "disableDeploymentModeChooser": true,
+  "disableDeepLinkRegistration": true,
+
+  "isDesktopExtensionEnabled": false,
+  "isDesktopExtensionSignatureRequired": true,
+  "isLocalDevMcpEnabled": false,
+  "mcpPersistentAlwaysAllowEnabled": false,
+
+  "autoModeEnabled": false,
+  "skillCreationEnabled": false,
+
+  "allowedWorkspaceFolders": [
+    { "path": "/home/user/work", "isDefaultSelected": true, "mode": "rw" }
+  ],
+  "coworkEgressAllowedHosts": [],
+
+  "_quota": "Soft per-user cap.",
+  "_inferenceMaxTokensPerWindow": 2000000,
+  "_inferenceTokenWindowHours": 24,
+
+  "_otlp": "Audit trail to your own collector. Use http/protobuf on :4318 - with grpc, Cowork falls back to http/protobuf and the desktop stream is always http/json, so a gRPC receiver on :4317 silently drops two of three streams.",
+  "_otlpEndpoint": "https://otel-collector.corp.example.com:4318",
+  "_otlpProtocol": "http/protobuf",
+  "_otlpHeaders": { "Authorization": "Bearer REPLACE_ME" }
+}

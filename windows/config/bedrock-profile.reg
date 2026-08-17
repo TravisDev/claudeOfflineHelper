@@ -1,0 +1,35 @@
+Windows Registry Editor Version 5.00
+
+; Claude Desktop 3P - Amazon Bedrock via a named AWS profile
+;
+; Use when the machine already has credentials from `aws configure` or
+; `aws sso login`. Good for a single machine or a pilot.
+;
+;     reg import bedrock-profile.reg          (as Administrator)
+;
+; All values are REG_SZ, including booleans. See docs/03-BEDROCK-CONFIG.md
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Claude]
+
+"inferenceProvider"="bedrock"
+"inferenceBedrockRegion"="us-west-2"
+
+; --- credentials ------------------------------------------------------------
+"inferenceBedrockProfile"="bedrock-prod"
+
+; Folder holding config/credentials. Defaults to the user's ~/.aws when unset.
+"inferenceBedrockAwsDir"="C:\\Users\\%USERNAME%\\.aws"
+
+; Set this if `aws` is not on the app's PATH. GUI apps inherit a narrower PATH
+; than your shell, which is the usual cause of "credentials not found" when the
+; CLI plainly works in a terminal.
+"inferenceBedrockAwsCliPath"="C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe"
+
+; --- models -----------------------------------------------------------------
+"modelDiscoveryEnabled"="true"
+
+; --- offline posture --------------------------------------------------------
+"disableAutoUpdates"="true"
+"disableNonessentialTelemetry"="true"
+"disableNonessentialServices"="true"
+"disableDeploymentModeChooser"="true"

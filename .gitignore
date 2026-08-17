@@ -1,0 +1,28 @@
+# Installer binaries live in GitHub Releases, not git.
+# GitHub hard-rejects any file over 100 MB pushed through git; the Windows
+# offline installer alone is 1.8 GB. Release assets allow up to 2 GB each.
+*.msix
+*.deb
+*.dmg
+*.exe
+*.appinstaller
+
+# Zipped release assets
+*.msix.zip
+*.deb.zip
+*.dmg.zip
+
+# Staging output from scripts/Fetch-Latest.ps1
+_staging/
+_release/
+
+# VM bundle + CLI components for the offline .deb build (1.4 GB)
+_preseed/
+
+# Portable extraction output from windows/Make-Portable.ps1
+Claude-Portable/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini

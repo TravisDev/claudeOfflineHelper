@@ -1,0 +1,69 @@
+Windows Registry Editor Version 5.00
+
+; Claude Desktop 3P - maximum lockdown, Amazon Bedrock
+;
+; Pair this with the OFFLINE MSIX. Together they produce a deployment whose only
+; egress is your Bedrock endpoint - no connections to Anthropic at all.
+;
+;     reg import bedrock-lockeddown.reg       (as Administrator)
+;
+; This profile is restrictive on purpose. Read the notes and relax what your
+; users actually need. All values are REG_SZ. See docs/04-CONFIG-REFERENCE.md
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Claude]
+
+; --- provider ---------------------------------------------------------------
+"inferenceProvider"="bedrock"
+"inferenceBedrockRegion"="us-east-1"
+"inferenceBedrockSsoStartUrl"="https://my-sso-portal.awsapps.com/start"
+"inferenceBedrockSsoRegion"="us-east-1"
+"inferenceBedrockSsoAccountId"="123456789012"
+"inferenceBedrockSsoRoleName"="BedrockAccess"
+
+; Private endpoint - allowlist this host instead of the public runtime host.
+;"inferenceBedrockBaseUrl"="https://bedrock-runtime.vpce-0abc123.us-east-1.vpce.amazonaws.com"
+
+; --- fleet identity ---------------------------------------------------------
+;"deploymentOrganizationUuid"="00000000-0000-0000-0000-000000000000"
+
+; --- no Anthropic egress ----------------------------------------------------
+"disableAutoUpdates"="true"
+"disableNonessentialTelemetry"="true"
+"disableNonessentialServices"="true"
+"disableDeploymentModeChooser"="true"
+"disableDeepLinkRegistration"="true"
+
+; disableEssentialTelemetry is left OFF deliberately. Setting it opts you into a
+; manual support model with zero remote visibility for Anthropic, and your
+; firewall already blocks sentry.io and the Datadog intake host. Uncomment only
+; if a policy requires the app itself to refuse to try.
+;"disableEssentialTelemetry"="true"
+
+; --- extensions and MCP -----------------------------------------------------
+"isDesktopExtensionEnabled"="false"
+"isDesktopExtensionSignatureRequired"="true"
+"isLocalDevMcpEnabled"="false"
+"mcpPersistentAlwaysAllowEnabled"="false"
+
+; --- agent behaviour --------------------------------------------------------
+"autoModeEnabled"="false"
+"skillCreationEnabled"="false"
+
+; Folders the agent may touch. JSON encoded as a string.
+"allowedWorkspaceFolders"="[{\"path\":\"C:\\\\Work\",\"isDefaultSelected\":true,\"mode\":\"rw\"}]"
+
+; Hosts the agent's own web-fetch and shell tools may reach. Empty = none.
+; This is separate from and stricter than your perimeter firewall.
+"coworkEgressAllowedHosts"="[]"
+
+; --- usage cap --------------------------------------------------------------
+;"inferenceMaxTokensPerWindow"="2000000"
+;"inferenceTokenWindowHours"="24"
+
+; --- audit trail to your own collector --------------------------------------
+; Use http/protobuf on :4318. With grpc, Cowork falls back to http/protobuf and
+; the desktop stream is always http/json, so a gRPC receiver on :4317 silently
+; drops two of the three streams.
+;"otlpEndpoint"="https://otel-collector.corp.example.com:4318"
+;"otlpProtocol"="http/protobuf"
+;"otlpHeaders"="{\"Authorization\":\"Bearer REPLACE_ME\"}"

@@ -1,0 +1,43 @@
+Windows Registry Editor Version 5.00
+
+; Claude Desktop 3P - Amazon Bedrock via AWS SSO / IAM Identity Center
+;
+; EDIT the five placeholder values below, then apply as Administrator:
+;     reg import bedrock-sso.reg
+;
+; Every value MUST be REG_SZ - a string - even the booleans. A REG_DWORD or
+; REG_EXPAND_SZ under this key makes the app treat the configuration as invalid.
+;
+; Apply this BEFORE installing the app, so users never reach the claude.ai
+; sign-in screen. Full reference: docs/03-BEDROCK-CONFIG.md
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Claude]
+
+; --- provider ---------------------------------------------------------------
+"inferenceProvider"="bedrock"
+"inferenceBedrockRegion"="us-east-1"
+
+; --- AWS SSO ----------------------------------------------------------------
+; SsoRegion is your IAM Identity Center HOME region, which is often NOT the
+; same as the inference region above.
+"inferenceBedrockSsoStartUrl"="https://my-sso-portal.awsapps.com/start"
+"inferenceBedrockSsoRegion"="us-east-1"
+"inferenceBedrockSsoAccountId"="123456789012"
+"inferenceBedrockSsoRoleName"="BedrockAccess"
+
+; --- models -----------------------------------------------------------------
+; Let the app discover what your account can actually invoke.
+"modelDiscoveryEnabled"="true"
+
+; Or pin an explicit list - first entry is the default. JSON encoded as a string:
+;"inferenceModels"="[{\"name\":\"us.anthropic.claude-sonnet-5\",\"isFamilyDefault\":true},{\"name\":\"us.anthropic.claude-opus-4-8\"}]"
+
+; --- offline posture --------------------------------------------------------
+"disableAutoUpdates"="true"
+"disableNonessentialTelemetry"="true"
+"disableNonessentialServices"="true"
+"disableDeploymentModeChooser"="true"
+
+; Deliberately NOT set: disableEssentialTelemetry.
+; Your firewall already blocks those hosts. Disabling the key as well costs you
+; Anthropic's remote visibility into failures for no extra network benefit.

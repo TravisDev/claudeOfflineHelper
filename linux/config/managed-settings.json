@@ -1,0 +1,54 @@
+{
+  "_comment": [
+    "Claude Desktop 3P managed configuration - Amazon Bedrock.",
+    "Install to /etc/claude-desktop/managed-settings.json (mode 0644, root-owned).",
+    "Unlike Windows and macOS, this file uses NATIVE JSON types - real booleans,",
+    "real arrays, real numbers. Do not quote them.",
+    "Keys starting with _ are ignored by the app and are safe to leave in place.",
+    "Full reference: docs/03-BEDROCK-CONFIG.md"
+  ],
+
+  "inferenceProvider": "bedrock",
+  "inferenceBedrockRegion": "us-east-1",
+
+  "_auth": "Pick ONE of the blocks below and delete the rest.",
+
+  "_auth_profile": "Named AWS profile - reuses credentials already on the box.",
+  "inferenceBedrockProfile": "bedrock-prod",
+  "inferenceBedrockAwsDir": "~/.aws",
+  "inferenceBedrockAwsCliPath": "/usr/local/bin/aws",
+
+  "_auth_sso": "AWS SSO - SsoRegion is the IAM Identity Center HOME region.",
+  "_inferenceBedrockSsoStartUrl": "https://my-sso-portal.awsapps.com/start",
+  "_inferenceBedrockSsoRegion": "us-east-1",
+  "_inferenceBedrockSsoAccountId": "123456789012",
+  "_inferenceBedrockSsoRoleName": "BedrockAccess",
+
+  "_auth_token": "Static bearer token - simplest, does not rotate, shared identity.",
+  "_inferenceBedrockBearerToken": "REPLACE_ME",
+
+  "_auth_helper": "Credential helper - an executable that prints credentials.",
+  "_inferenceCredentialHelper": "/usr/local/bin/get-bedrock-token.sh",
+  "_inferenceCredentialHelperTtlSec": 3600,
+
+  "_models": "Discover what the account can invoke, or pin a list. First entry is the default. The regional prefix (us./eu./apac.) must match the region above.",
+  "modelDiscoveryEnabled": true,
+  "_inferenceModels": [
+    { "name": "us.anthropic.claude-sonnet-5", "isFamilyDefault": true, "supports1m": true },
+    { "name": "us.anthropic.claude-opus-4-8", "labelOverride": "Opus (heavy tasks)" }
+  ],
+
+  "_offline": "Linux has no offline installer, so the app still needs downloads.claude.ai at session start. Turning off auto-updates avoids a failing startup call.",
+  "disableAutoUpdates": true,
+  "disableNonessentialTelemetry": true,
+  "disableNonessentialServices": true,
+  "disableDeploymentModeChooser": true,
+
+  "_egress": "Hosts the agent's own web-fetch and shell tools may reach. Separate from and stricter than your perimeter firewall.",
+  "coworkEgressAllowedHosts": [],
+
+  "_workspace": "Folders the agent may work in.",
+  "allowedWorkspaceFolders": [
+    { "path": "/home/user/work", "isDefaultSelected": true, "mode": "rw" }
+  ]
+}
