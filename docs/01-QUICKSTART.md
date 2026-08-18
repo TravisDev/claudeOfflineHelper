@@ -28,27 +28,27 @@ its VM bundle at session start just like the stock `.deb`.
 Release page:
 **https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v1.30096.5**
 
-The repository is **private**, so downloads need authentication:
+The repository is public — assets download anonymously, no token or GitHub account
+needed:
 
 ```bash
-gh auth login --hostname github.com --git-protocol https --web
+curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/claude-desktop_1.30096.5+offline1_amd64.deb.zip
+```
+
+```bash
+curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/Claude-1.30096.5-x64-offline.msix.zip
+```
+
+Use `-L`. The first response is a 302 to the storage backend; without it you get a
+zero-byte file that looks like a broken link.
+
+With `gh` installed, this works too and handles resume:
+
+```bash
 gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
 ```
 
-That pulls all four assets (3.69 GB). Grab just the one you need instead:
-
-```bash
-# Linux amd64, air-gapped (1.57 GB)
-gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper   --pattern "claude-desktop_1.30096.5+offline1_amd64.deb.zip"
-
-# Windows x64 (1.80 GB)
-gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper   --pattern "Claude-1.30096.5-x64-offline.msix.zip"
-```
-
-No `gh` on the target? Download from the release page in a browser while signed in to
-GitHub. Plain `curl`/`wget` on the asset URL returns 404 without a token — private-repo
-assets are not publicly fetchable, and that 404 looks like a broken link when it is
-actually an auth failure.
+All four assets together are 3.69 GB, so pull only what you need.
 
 Then unzip:
 

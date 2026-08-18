@@ -7,6 +7,15 @@ doing it.
 > **This is unsupported.** You are modifying a vendor package. Anthropic did not publish
 > this configuration and will not support it. Read [Risks](#risks-read-before-deploying)
 > before putting it on a fleet.
+>
+> **If you are redistributing the result publicly**, note that the rebuilt package keeps
+> Anthropic's `Package:` name and `Maintainer: Anthropic PBC <support@anthropic.com>`
+> field, so anyone who installs it sees Anthropic as the maintainer of software Anthropic
+> did not build. The `+offline1` version suffix is the only marker distinguishing it.
+> Consider whether redistributing a proprietary vendor's installers — modified or not —
+> is something you have the right to do, and make the provenance unmissable to anyone who
+> finds the download. Support requests for a rebuilt package are not Anthropic's to
+> answer.
 
 ---
 
