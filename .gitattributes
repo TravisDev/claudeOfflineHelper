@@ -1,0 +1,23 @@
+# Shell scripts and Python run on Linux (including inside Docker containers).
+# CRLF endings break them with errors like:
+#   set: pipefail: invalid option name
+# Force LF regardless of the checkout platform or core.autocrlf setting.
+*.sh    text eol=lf
+*.py    text eol=lf
+
+# Debian packaging inputs must be LF.
+linux/config/*.json text eol=lf
+
+# PowerShell and Windows registry files are consumed on Windows.
+*.ps1   text eol=crlf
+*.reg   text eol=crlf
+
+# Documentation: normalize in the repo, let git decide on checkout.
+*.md    text
+*.asc   text eol=lf
+
+# Never touch binaries.
+*.deb   binary
+*.msix  binary
+*.zst   binary
+*.zip   binary

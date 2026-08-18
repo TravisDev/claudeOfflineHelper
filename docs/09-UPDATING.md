@@ -148,11 +148,29 @@ Managed configuration survives an upgrade; it lives in the registry or
 
 ## Version pinning reality
 
-There is no URL that serves a specific historical version. The versioned paths under
-`downloads.claude.ai` (for example
-`.../releases-offline/win32/x64/1.30096.5/Claude-<hash>-offline.msix`) are what the
-redirect resolves to, and they do keep working once you know the exact hash — but you
-only learn that hash by following the redirect while that version is current.
+The `latest/redirect` URLs move without warning. On 2026-08-17 they served 1.30096.5 in
+the morning and **1.32352.0** by the evening — same URLs, different release, no notice.
+If you re-run a download expecting to reproduce an earlier bundle, you will silently get
+a newer one whose checksums do not match anything you recorded.
 
-Practical consequence: **your GitHub release is your version archive.** Nothing else
-keeps old builds for you. Do not prune old releases to save space.
+**Versioned paths remain hosted and are the way to pin.** Once you know a release's
+version and commit hash, these keep working:
+
+```
+https://downloads.claude.ai/releases-offline/win32/x64/<version>/Claude-<commit>-offline.msix
+https://downloads.claude.ai/releases/win32/x64/<version>/Claude-<commit>.msix
+https://downloads.claude.ai/releases/linux/<x64|arm64>/<version>/Claude-<commit>.deb
+https://downloads.claude.ai/vms/linux/<x64|arm64>/<bundle-sha>/<file>.zst
+```
+
+For 1.30096.5 the commit hash is `6e13464cbd9c3dc0501fe5ecb0568e3d3e9ea77a`. Read it from
+any build with `scripts/inspect-deb-manifests.py`, or from the `Location` header of a
+`latest/redirect` request while that version is current.
+
+Two consequences worth planning around:
+
+1. **Record the version and commit hash the moment you download**, not later. It is the
+   only way back to that exact build.
+2. **Your GitHub release is your version archive.** Do not prune old releases to save
+   space — and never mix artifacts pulled at different times into one release without
+   re-verifying, since `latest` may have moved between them.

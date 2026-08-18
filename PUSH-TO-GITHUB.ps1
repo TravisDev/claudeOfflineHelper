@@ -43,7 +43,7 @@ Write-Host   "  ====================================="
 
 # --- 1. auth ---------------------------------------------------------------
 Step '[1/5] Authenticating with GitHub...'
-& $gh auth status 2>&1 | Out-Null
+& $gh auth status 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host '  A browser window will open. Enter the one-time code it shows.'
     & $gh auth login --hostname github.com --git-protocol https --web
@@ -55,7 +55,7 @@ Ok "Authenticated as $user"
 
 # --- 2. repo ---------------------------------------------------------------
 Step '[2/5] Ensuring the repository exists (private)...'
-& $gh repo view "$user/$Repo" 2>&1 | Out-Null
+& $gh repo view "$user/$Repo" 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     & $gh repo create "$user/$Repo" --private `
         --description 'Offline install bundles and Bedrock configuration docs for Claude Desktop'
@@ -77,12 +77,12 @@ if ($LASTEXITCODE -ne 0) {
 # --- 3. commit -------------------------------------------------------------
 Step '[3/5] Committing...'
 if (-not (Test-Path .git)) { git init -b $branch | Out-Null }
-git remote get-url origin 2>&1 | Out-Null
+git remote get-url origin 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { git remote add origin "https://github.com/$user/$Repo.git" }
 
 git add -A
 git -c user.name="$user" -c user.email="$user@users.noreply.github.com" `
-    commit -q -m "Claude Desktop $Version offline bundle: offline installer, Bedrock config, docs" 2>&1 | Out-Null
+    commit -q -m "Claude Desktop $Version offline bundle: offline installer, Bedrock config, docs" 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { Write-Host '  (nothing new to commit)' }
 
 $tracked = (git ls-files | Measure-Object).Count
@@ -93,7 +93,7 @@ if ($big) { Die "These tracked files exceed GitHub's 100 MB git limit:`n    $($b
 
 # --- 4. push ---------------------------------------------------------------
 Step '[4/5] Pushing...'
-git fetch origin $branch 2>&1 | Out-Null
+git fetch origin $branch 2>$null | Out-Null
 if ($LASTEXITCODE -eq 0) {
     git -c user.name="$user" -c user.email="$user@users.noreply.github.com" `
         pull --rebase origin $branch --allow-unrelated-histories
@@ -116,7 +116,7 @@ if ($SkipAssets) {
     Write-Host ("  {0:N2} GB total - this will take a while." -f $totalGB) -ForegroundColor Yellow
 
     $paths = $assets | ForEach-Object { $_.FullName }
-    & $gh release view $Tag --repo "$user/$Repo" 2>&1 | Out-Null
+    & $gh release view $Tag --repo "$user/$Repo" 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) {
         $notes = @"
 Claude Desktop $Version offline install bundle.
@@ -136,7 +136,7 @@ All assets are zipped. Unzip before installing, and verify against CHECKSUMS.md.
 | Payload | SHA256 |
 |---|---|
 | Claude-$Version-x64-offline.msix | c2ae7281a3d10e74abfdd430359da813ada90fd5b9eefb0db2212e574ac0895a |
-| claude-desktop_${Version}+offline1_amd64.deb | faa804b7feb2d3e90960b4f1e078057bb4ca270f4b9466c943bd90f90846c94f |
+| claude-desktop_${Version}+offline1_amd64.deb | 959ed6c39af8110abdd178a3bec45a1986a39854459d11dcc04ae9722334cb0c |
 | claude-desktop_${Version}_amd64.deb | e699763dd0e33bd831a1c771ea2684ead894f2680f02c71693a4e345046bd8f5 |
 | claude-desktop_${Version}_arm64.deb | 9de0fbb5300d80bbf91dc7e4a4d066bfd6bead3830a0d7ae6c8b0a8529cf59ea |
 "@
