@@ -21,7 +21,41 @@ boundary.
 | `claude.ai` | 443 | HTTPS | Version resolution only. `GET /api/desktop/<platform>/<arch>/<kind>/latest/redirect` returns a `307` naming the current build. No payload. |
 | `downloads.claude.ai` | 443 | HTTPS | All artifact bytes: installers (`.msix`, `.deb`, `.dmg`), the VM workspace bundle, and the Claude CLI. |
 
-That is the whole list. Two hostnames.
+That is the whole list. Two hostnames, both under the **same domain** — a single rule for
+`claude.ai` plus `*.claude.ai` covers the entire download path.
+
+### `anthropic.com` is never contacted
+
+Verified by tracing a real download. The only TCP connections made are:
+
+```
+Trying 160.79.104.10:443 ...   > Host: claude.ai
+Trying 35.190.46.17:443  ...   > Host: downloads.claude.ai
+```
+
+No `anthropic.com` connection, and no `anthropic.com` reference in any response header.
+`anthropic.com` can stay blocked permanently — during download **and** at runtime, since
+inference goes to Bedrock.
+
+**Three distinct domains are involved here and they are easy to conflate.** Name
+hostnames in the request rather than asking to "unblock Anthropic", which invites a
+reviewer to grant or deny all three together:
+
+| Domain | Needed? | What it is |
+|---|---|---|
+| `claude.ai` | **Yes** | Version resolution and artifact downloads |
+| `claude.com` | Optional | Anthropic's documentation only |
+| `anthropic.com` | **No** | Model API, analytics, telemetry — not used by this deployment |
+
+### Allowlist by hostname, not IP
+
+`downloads.claude.ai` resolved to `35.190.46.17` (Google Cloud) at the time of writing.
+That address will change without notice. An IP-based rule breaks silently, usually
+mid-rollout. Match on hostname/SNI.
+
+If your perimeter filters by **vendor category** rather than hostname, `claude.ai` may
+sit in the same category as `anthropic.com` and be denied alongside it even though you
+only requested the former. Confirm how the existing block is implemented before filing.
 
 **Optional, documentation only:**
 
