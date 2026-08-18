@@ -158,6 +158,7 @@ partial download. Full hash list: [CHECKSUMS.md](CHECKSUMS.md).
 | [09 — Updating](docs/09-UPDATING.md) | Re-fetching installers on a connected machine |
 | [10 — Claude Code CLI on Bedrock](docs/10-CLAUDE-CODE-CLI-BEDROCK.md) | The lighter-weight fallback path |
 | [11 — Building an offline `.deb`](docs/11-BUILD-OFFLINE-DEB.md) | How the preseed injection works, and its risks |
+| [12 — Firewall request: downloading](docs/12-DOWNLOAD-EGRESS.md) | Hosts needed to **fetch** the installers (not the runtime allowlist) |
 
 ---
 

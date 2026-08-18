@@ -6,6 +6,10 @@ your firewall team.
 All traffic is HTTPS on port 443. Allowlist **by hostname (SNI)** — path-level rules are
 not required.
 
+> **Looking for the hosts needed to *download* the installers?** That is a different and
+> much smaller list — see [12 — Firewall request: downloading](12-DOWNLOAD-EGRESS.md).
+> This page is about what the installed application talks to at runtime.
+
 ---
 
 ## The headline
