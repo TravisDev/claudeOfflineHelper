@@ -75,13 +75,57 @@ The stock Linux `.deb` is also staged here for anyone who *can* reach that host.
 2. **[docs/03-BEDROCK-CONFIG.md](docs/03-BEDROCK-CONFIG.md)** — wire it to Bedrock.
 3. **[docs/02-NETWORK-EGRESS.md](docs/02-NETWORK-EGRESS.md)** — hand this to the firewall team.
 
-Pull the binaries from the [latest release](../../releases/latest):
+---
+
+## Downloading the installers
+
+The installers are **not in git** — GitHub rejects files over 100 MB, and the Windows
+offline installer alone is 1.8 GB. They are attached to the release instead:
+
+**https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v1.30096.5**
+
+| Asset | Size | What it is |
+|---|---|---|
+| `Claude-1.30096.5-x64-offline.msix.zip` | 1.80 GB | Windows x64, **official offline installer** — no Anthropic egress |
+| `claude-desktop_1.30096.5+offline1_amd64.deb.zip` | 1.57 GB | Linux amd64, **offline build from this repo** — no Anthropic egress, [unsupported](docs/11-BUILD-OFFLINE-DEB.md) |
+| `claude-desktop_1.30096.5_amd64.deb.zip` | 165 MB | Linux amd64, stock — needs `downloads.claude.ai` at session start |
+| `claude-desktop_1.30096.5_arm64.deb.zip` | 157 MB | Linux arm64, stock — needs `downloads.claude.ai` at session start |
+
+### This repository is private
+
+Downloads require authentication. On the target machine:
 
 ```bash
-gh release download v1.30096.5 --repo <you>/claudeOfflineHelper --pattern "*.zip"
+gh auth login --hostname github.com --git-protocol https --web
+gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
 ```
 
-Every release asset is a `.zip`. Unzip before installing.
+Pull only what you need — the two offline packages are 3.4 GB together:
+
+```bash
+# Linux amd64, air-gapped
+gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper   --pattern "claude-desktop_1.30096.5+offline1_amd64.deb.zip"
+
+# Windows x64
+gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper   --pattern "Claude-1.30096.5-x64-offline.msix.zip"
+```
+
+If `gh` is unavailable, download from the release page in a browser while signed in to
+GitHub. A plain `curl` or `wget` against the asset URL returns a 404 without a token —
+private-repo assets are not publicly fetchable, which is easy to misdiagnose as a bad
+link.
+
+### Then verify
+
+Unzip and check what you got — these files crossed a network boundary:
+
+```bash
+unzip 'claude-desktop_1.30096.5+offline1_amd64.deb.zip'
+./scripts/verify-checksums.sh
+```
+
+The script checks whatever is present and skips the rest, so it is safe to run after a
+partial download. Full hash list: [CHECKSUMS.md](CHECKSUMS.md).
 
 ---
 

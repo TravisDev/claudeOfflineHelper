@@ -5,7 +5,7 @@
 .DESCRIPTION
     Everything except GitHub authentication is already done. This script:
       1. authenticates gh (opens your browser once)
-      2. creates <you>/claudeOfflineHelper as PRIVATE if it does not exist
+      2. creates TravisDev/claudeOfflineHelper as PRIVATE if it does not exist
       3. pushes the docs and scripts
       4. uploads the zipped installers as release assets under tag v1.30096.5
 

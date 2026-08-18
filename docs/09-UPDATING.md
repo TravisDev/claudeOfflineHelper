@@ -98,7 +98,7 @@ offline installer until its replacement is downloaded and checksummed.
 ```bash
 VER=1.30097.0
 
-gh release create "v$VER" --repo <you>/claudeOfflineHelper \
+gh release create "v$VER" --repo TravisDev/claudeOfflineHelper \
   --title "Claude Desktop $VER" \
   --notes-file RELEASE-NOTES.md \
   _staging/*.zip
@@ -107,7 +107,7 @@ gh release create "v$VER" --repo <you>/claudeOfflineHelper \
 To replace assets on an existing tag:
 
 ```bash
-gh release upload "v$VER" --repo <you>/claudeOfflineHelper _staging/*.zip --clobber
+gh release upload "v$VER" --repo TravisDev/claudeOfflineHelper _staging/*.zip --clobber
 ```
 
 Then update [CHECKSUMS.md](../CHECKSUMS.md) with the new hashes and commit. **The
@@ -123,7 +123,7 @@ a large file of unknown provenance that crossed a network boundary.
 3. Pull on the target side:
 
 ```bash
-gh release download v1.30097.0 --repo <you>/claudeOfflineHelper --pattern "*.zip"
+gh release download v1.30097.0 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
 ./scripts/verify-checksums.sh
 ```
 

@@ -142,7 +142,7 @@ $ver = ($plan | Select-Object -First 1).Version
 Write-Host @"
 
   Next:
-    gh release create v$ver --repo <you>/claudeOfflineHelper ``
+    gh release create v$ver --repo TravisDev/claudeOfflineHelper ``
       --title "Claude Desktop $ver" $OutDir\*.zip
 
   Then update CHECKSUMS.md with the hashes above and commit.
