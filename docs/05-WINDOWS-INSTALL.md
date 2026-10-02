@@ -8,26 +8,36 @@ Including a direct answer to the portable-installer question.
 
 | | |
 |---|---|
-| File | `Claude-1.30096.5-x64-offline.msix` |
-| Size | 1.80 GB |
-| SHA256 | `c2ae7281a3d10e74abfdd430359da813ada90fd5b9eefb0db2212e574ac0895a` |
+| File | `Claude-2.19675.0-x64-offline.msix` |
+| Size | 1.86 GB (1,996,376,338 bytes) |
+| SHA256 | `91c8cf150700331bdf6e87dcb3ac036effa98ce379697999197ddeeb0105687f` |
 | Arm64 | Not staged here — `https://claude.ai/api/desktop/win32/arm64/offline/latest/redirect` |
 
 This package contains the VM workspace bundle and Claude CLI, so **sessions start with
 no connection to Anthropic**. Confirmed by inspecting its contents:
 
 ```
-app/resources/preseed/vm_bundle/rootfs.vhdx.zst        1274 MB
-app/resources/preseed/vm_bundle/initrd.zst               71 MB
-app/resources/preseed/vm_bundle/vmlinuz.zst              14 MB
-app/resources/preseed/claude-code/win32-x64/claude.exe  293 MB
-app/resources/preseed/claude-code/win32-x64.zst          68 MB
-app/resources/preseed/claude-code/linux-x64.zst          65 MB
+app/resources/preseed/vm_bundle/rootfs.vhdx.zst         1230 MB   (1,289,469,649 bytes)
+app/resources/preseed/vm_bundle/initrd.zst                27 MB
+app/resources/preseed/vm_bundle/vmlinuz.zst               14 MB
+app/resources/preseed/claude-code/win32-x64/claude.exe   234 MB
+app/resources/preseed/claude-code/win32-x64.zst           83 MB
+app/resources/preseed/claude-code/linux-x64.zst           81 MB   (Cowork guest CLI)
+app/resources/preseed/claude-code/linux-arm64.zst         80 MB
+app/resources/preseed/claude-ssh/linux-amd64.zst         2.6 MB   (remote-SSH feature)
+app/resources/preseed/claude-ssh/linux-arm64.zst         2.3 MB
 ```
 
-The standard MSIX (267 MB) has none of these — only a 36 MB `smol-bin.x64.vhdx` — and
-downloads them from `downloads.claude.ai` at session start. **Do not stage the standard
+The standard MSIX is 292 MB, which cannot contain a 1.2 GB VM image: it downloads the
+bundle and CLI from `downloads.claude.ai` at session start. **Do not stage the standard
 MSIX for an offline network.**
+
+### Size is approaching GitHub's per-asset limit
+
+GitHub rejects release assets over **2 GiB (2,048 MiB)**. The zipped asset is
+**1,901 MiB**, leaving about 147 MiB. It has grown from 1,839 MiB in 1.30096.5, so within
+a release or two it will not fit as a single asset. See
+[09 — Updating](09-UPDATING.md#the-2-gib-asset-limit) for what to do then.
 
 ---
 
@@ -59,20 +69,20 @@ each hardware model before a fleet rollout.
 Configuration first (see [03 — Bedrock configuration](03-BEDROCK-CONFIG.md)), then:
 
 ```powershell
-.\Install-Claude.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix
+.\Install-Claude.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix
 ```
 
 The script verifies the SHA256, checks S Mode and the Windows build, and refuses to
 proceed on a mismatch. Or do it by hand:
 
 ```powershell
-Add-AppxPackage -Path .\Claude-1.30096.5-x64-offline.msix
+Add-AppxPackage -Path .\Claude-2.19675.0-x64-offline.msix
 ```
 
 For machine-wide provisioning so every user on the device gets it (needs admin):
 
 ```powershell
-Add-AppxProvisionedPackage -Online -PackagePath .\Claude-1.30096.5-x64-offline.msix -SkipLicense
+Add-AppxProvisionedPackage -Online -PackagePath .\Claude-2.19675.0-x64-offline.msix -SkipLicense
 ```
 
 In a managed fleet, deploy the MSIX through Intune or ConfigMgr as a line-of-business
@@ -85,7 +95,7 @@ The failure mode on a stale certificate store is a signature error from
 the package is actually signed with:
 
 ```powershell
-Get-AuthenticodeSignature .\Claude-1.30096.5-x64-offline.msix | Format-List *
+Get-AuthenticodeSignature .\Claude-2.19675.0-x64-offline.msix | Format-List *
 ```
 
 Expected publisher: `CN="Anthropic, PBC", O="Anthropic, PBC", L=San Francisco, S=California, C=US`.
@@ -151,7 +161,7 @@ Claude Desktop *without* Cowork.
 redirects user data into the folder:
 
 ```powershell
-.\Make-Portable.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix -OutDir .\Claude-Portable
+.\Make-Portable.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix -OutDir .\Claude-Portable
 .\Claude-Portable\Claude-Portable.cmd
 ```
 
@@ -180,7 +190,7 @@ first install even though ordinary MSIX packages do not. Try it as a standard us
 find out before you plan a rollout around it:
 
 ```powershell
-Add-AppxPackage -Path .\Claude-1.30096.5-x64-offline.msix
+Add-AppxPackage -Path .\Claude-2.19675.0-x64-offline.msix
 ```
 
 To remove it again, cleanly and without admin:

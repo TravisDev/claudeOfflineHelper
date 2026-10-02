@@ -1,6 +1,6 @@
 # claudeOfflineHelper
 
-Offline install bundles and configuration docs for **Claude Desktop 1.30096.5**, for
+Offline install bundles and configuration docs for **Claude Desktop 2.19675.0**, for
 machines on networks that block `anthropic.com` and `claude.ai`, running inference
 against **Amazon Bedrock**.
 
@@ -64,9 +64,9 @@ D.info(`[preseed] installing Claude CLI ${e.platform} from package`);
 ```
 
 So this repo builds one: [`scripts/build-offline-deb.sh`](scripts/build-offline-deb.sh)
-injects the VM workspace image, kernel, initrd, and Claude CLI into
+injects the VM workspace image, kernel, initrds, and Claude CLI into
 `resources/preseed/`, each verified against checksums compiled into the application.
-The result is `claude-desktop_1.30096.5+offline1_amd64.deb` (1.6 GB).
+The result is `claude-desktop_2.19675.0+offline1_amd64.deb` (1.5 GB).
 
 **This is unsupported** — you are modifying a vendor package and losing its signature.
 Read [docs/11-BUILD-OFFLINE-DEB.md](docs/11-BUILD-OFFLINE-DEB.md), especially the risks
@@ -88,16 +88,16 @@ The stock Linux `.deb` is also staged here for anyone who *can* reach that host.
 ## Downloading the installers
 
 The installers are **not in git** — GitHub rejects files over 100 MB, and the Windows
-offline installer alone is 1.8 GB. They are attached to the release instead:
+offline installer alone is 1.9 GB. They are attached to the release instead:
 
-**https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v1.30096.5**
+**https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v2.19675.0**
 
 | Asset | Size | What it is |
 |---|---|---|
-| `Claude-1.30096.5-x64-offline.msix.zip` | 1.80 GB | Windows x64, **official offline installer** — no Anthropic egress |
-| `claude-desktop_1.30096.5+offline1_amd64.deb.zip` | 1.57 GB | Linux amd64, **offline build from this repo** — no Anthropic egress, [unsupported](docs/11-BUILD-OFFLINE-DEB.md) |
-| `claude-desktop_1.30096.5_amd64.deb.zip` | 165 MB | Linux amd64, stock — needs `downloads.claude.ai` at session start |
-| `claude-desktop_1.30096.5_arm64.deb.zip` | 157 MB | Linux arm64, stock — needs `downloads.claude.ai` at session start |
+| `Claude-2.19675.0-x64-offline.msix.zip` | 1.86 GB | Windows x64, **official offline installer** — no Anthropic egress |
+| `claude-desktop_2.19675.0+offline1_amd64.deb.zip` | 1.52 GB | Linux amd64, **offline build from this repo** — no Anthropic egress, [unsupported](docs/11-BUILD-OFFLINE-DEB.md) |
+| `claude-desktop_2.19675.0_amd64.deb.zip` | 171 MB | Linux amd64, stock — needs `downloads.claude.ai` at session start |
+| `claude-desktop_2.19675.0_arm64.deb.zip` | 165 MB | Linux arm64, stock — needs `downloads.claude.ai` at session start |
 
 ### No authentication needed
 
@@ -105,17 +105,17 @@ This repository is public, so the assets download anonymously — no token, no `
 GitHub account. On the target machine:
 
 ```bash
-curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/claude-desktop_1.30096.5+offline1_amd64.deb.zip
+curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v2.19675.0/claude-desktop_2.19675.0+offline1_amd64.deb.zip
 ```
 
 ```bash
-wget https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/Claude-1.30096.5-x64-offline.msix.zip
+wget https://github.com/TravisDev/claudeOfflineHelper/releases/download/v2.19675.0/Claude-2.19675.0-x64-offline.msix.zip
 ```
 
 The asset URL pattern is:
 
 ```
-https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/<asset-name>
+https://github.com/TravisDev/claudeOfflineHelper/releases/download/v2.19675.0/<asset-name>
 ```
 
 `curl -L` matters — the first response is a 302 to the storage backend, and without
@@ -124,22 +124,35 @@ https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/<a
 If you have `gh`, it works too and gives you resumable, checksum-friendly transfers:
 
 ```bash
-gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
+gh release download v2.19675.0 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
 ```
 
-Pull only what you need — all four assets together are 3.69 GB.
+Pull only what you need — all four assets together are 3.70 GB.
 
 ### Then verify
 
 Unzip and check what you got — these files crossed a network boundary:
 
 ```bash
-unzip 'claude-desktop_1.30096.5+offline1_amd64.deb.zip'
+unzip 'claude-desktop_2.19675.0+offline1_amd64.deb.zip'
 ./scripts/verify-checksums.sh
 ```
 
 The script checks whatever is present and skips the rest, so it is safe to run after a
 partial download. Full hash list: [CHECKSUMS.md](CHECKSUMS.md).
+
+---
+
+## Releases
+
+| Release | Claude Desktop | Status |
+|---|---|---|
+| [v2.19675.0](https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v2.19675.0) | 2.19675.0 (built 2026-10-01) | **Current** |
+| [v1.30096.5](https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v1.30096.5) | 1.30096.5 (built 2026-08-14) | Kept as a version archive |
+
+`latest/redirect` upstream moves without warning, so nothing here can be re-downloaded
+later to reproduce an older build; the old release is the only copy. See
+[docs/09](docs/09-UPDATING.md#version-pinning-reality).
 
 ---
 
@@ -167,8 +180,11 @@ partial download. Full hash list: [CHECKSUMS.md](CHECKSUMS.md).
 ```
 claudeOfflineHelper/
 ├─ README.md                     you are here
-├─ CHECKSUMS.md                  SHA256 for every artifact, raw and zipped
-├─ docs/                         all documentation (10 files)
+├─ CHECKSUMS.md                  SHA256 for every artifact, current and previous release
+├─ docs/                         all documentation (12 files)
+├─ manifests/                    expected checksums of the preseed files, per version/arch
+│  ├─ 2.19675.0.amd64.preseed.sha256
+│  └─ 1.30096.5.amd64.preseed.sha256
 ├─ windows/
 │  ├─ README.md
 │  ├─ Install-Claude.ps1         installs the MSIX, verifies checksum first
@@ -179,21 +195,24 @@ claudeOfflineHelper/
 │     └─ bedrock-lockeddown.reg  zero Anthropic egress
 ├─ linux/
 │  ├─ README.md
-│  ├─ install.sh
+│  ├─ install.sh                 picks stock/offline, verifies, installs, checks the preseed tree
 │  ├─ claude-desktop-archive-keyring.asc
 │  └─ config/
 │     ├─ managed-settings.json            Bedrock, minimal
 │     └─ managed-settings-lockeddown.json zero Anthropic egress
 └─ scripts/
-   ├─ Fetch-Latest.ps1           re-download current installers (connected machine)
+   ├─ Fetch-Latest.ps1           check / download the current installers (connected machine)
+   ├─ Package-Release.ps1        zip a version's assets, checksum them, check the 2 GiB limit
    ├─ verify-checksums.sh        verify what you pulled from Releases
-   ├─ build-offline-deb.sh       build the offline Linux package (Docker)
-   ├─ test-offline-deb.sh        install it in a container and verify
-   └─ inspect-deb-manifests.py   read the bundle/CLI versions a .deb expects
+   ├─ inspect-deb-manifests.py   read what a .deb expects; --emit writes a preseed manifest
+   ├─ build-offline-deb.sh       build the offline Linux package from a manifest (Docker)
+   ├─ test-offline-deb.sh        install it in a container and verify against the manifest
+   ├─ test-install-sh.sh         exercise linux/install.sh end to end in a container
+   └─ check-preseed-live.sh      on a real machine: did the preseed tree actually get used?
 ```
 
 Binaries are **not** in git — GitHub rejects files over 100 MB through git, and the
-Windows offline installer is 1.8 GB. They are attached to the release instead
+Windows offline installer is 1.9 GB. They are attached to the release instead
 (2 GB per-asset limit), zipped.
 
 ---
@@ -202,10 +221,10 @@ Windows offline installer is 1.8 GB. They are attached to the release instead
 
 | Artifact | Version | Size | Offline? |
 |---|---|---|---|
-| `Claude-1.30096.5-x64-offline.msix` | 1.30096.5 | 1.80 GB | Yes — official |
-| `claude-desktop_1.30096.5+offline1_amd64.deb` | 1.30096.5 | 1.6 GB | Yes — built here, unsupported |
-| `claude-desktop_1.30096.5_amd64.deb` | 1.30096.5 | 165 MB | No — stock |
-| `claude-desktop_1.30096.5_arm64.deb` | 1.30096.5 | 157 MB | No — stock |
+| `Claude-2.19675.0-x64-offline.msix` | 2.19675.0 | 1.86 GB | Yes — official |
+| `claude-desktop_2.19675.0+offline1_amd64.deb` | 2.19675.0 | 1.5 GB | Yes — built here, unsupported |
+| `claude-desktop_2.19675.0_amd64.deb` | 2.19675.0 | 171 MB | No — stock |
+| `claude-desktop_2.19675.0_arm64.deb` | 2.19675.0 | 165 MB | No — stock |
 
 Checksums: [CHECKSUMS.md](CHECKSUMS.md). Verify before installing — these came off the
 public internet and crossed a network boundary to get to you.

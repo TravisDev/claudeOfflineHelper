@@ -1,0 +1,11 @@
+# Preseed components for Claude Desktop 2.19675.0 (commit 5706e5524dba58b23e105c31c358df8ab0a95852)
+# VM bundle 882518393ed4ce89020bd48d99d5daf114999773 (2026-09-11), Claude CLI 2.1.286
+# Architecture: amd64 (x86_64 host, x64 guest).
+# Checksums are over the COMPRESSED .zst artifacts, exactly as the app verifies them.
+# Format: <sha256>  <path relative to resources/preseed/>
+1c3e856d002d52df2246446ce0e3ae21fb65fdd81451f29a8e908305697a52c0  vm_bundle/rootfs.img.zst
+3118616ef6ba3866652284b8b4c224a96876c56091724c35c93caf1ccb9b50a9  vm_bundle/vmlinuz.zst
+c12df253f5ddac9f7f7cdf317c7257586d262eabd9336c1ce001301399fbe56a  vm_bundle/initrd.zst
+e8a5fa87ae465403ae5e8261e64c952527eb411828759d421086e14f05858531  vm_bundle/initrd-micro.zst
+a14d80443473126e40cbc50eb78899f43e8f4d4336095863f8089a6b9ca02a97  claude-code/linux-x64.zst
+fadfb069d2b8e3e304541c6b2ec0c0b87c71e081a8a3d6dfa4a511ba9217eb11  claude-ssh/linux-amd64.zst

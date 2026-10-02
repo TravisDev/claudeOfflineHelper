@@ -61,6 +61,113 @@ curl -sSL -A "$UA" -o claude-desktop_amd64.deb \
 
 ---
 
+## Update procedure
+
+This is the sequence used to move from 1.30096.5 to 2.19675.0. It took about an hour,
+most of it downloading.
+
+**1. Find out what is current** (a few KB, no download):
+
+```powershell
+.\scripts\Fetch-Latest.ps1 -CheckOnly
+```
+
+**2. Download by versioned URL, not `latest`.** `latest` can move between your first
+and last download, leaving you with mismatched artifacts. Resolve the version and commit
+once, then fetch everything from the pinned paths under
+[Version pinning reality](#version-pinning-reality).
+
+**3. Read what the new app expects.** Never assume the preseed layout carried over; it
+changed in 2.x (an extra VM file, new CLI version). The app states its own requirements:
+
+```bash
+python3 scripts/inspect-deb-manifests.py claude-desktop_<ver>_amd64.deb
+```
+
+**4. Emit the checksum manifest** the build is driven by:
+
+```bash
+python3 scripts/inspect-deb-manifests.py claude-desktop_<ver>_amd64.deb     --emit amd64 --with-ssh > manifests/<ver>.amd64.preseed.sha256
+```
+
+Drop `--with-ssh` for builds whose official offline installer did not ship `claude-ssh`
+(1.30096.5 did not; 2.19675.0 does). Add a comment header naming the version, commit,
+bundle sha and CLI version.
+
+**5. Fetch the components** it lists into `_preseed/<ver>/`, and verify them:
+
+```bash
+cd _preseed/<ver> && grep -vE '^\s*(#|$)' ../../manifests/<ver>.amd64.preseed.sha256 | sha256sum -c -
+```
+
+The Claude CLI and `claude-ssh` files can be lifted straight out of the new Windows
+offline MSIX (`app/resources/preseed/`), which is a ZIP. The VM files come from
+`https://downloads.claude.ai/vms/linux/x64/<bundle-sha>/<name>.zst`.
+
+**6. Build, then test:**
+
+```bash
+docker run --rm -v "$PWD:/work" -e VERSION=<ver> debian:12 bash /work/scripts/build-offline-deb.sh
+docker run --rm -v "$PWD:/work" -e VERSION=<ver> debian:12 bash /work/scripts/test-offline-deb.sh
+```
+
+The build refuses to run if any component fails its checksum, if the stock package is
+not the version you asked for, or if the manifest is missing. **Do not move or rename
+files under `_release/` while the test runs** — it reads the package through a bind
+mount, and a file moved mid-install makes apt fail with a confusing `cannot stat` error.
+
+**7. Package and publish:**
+
+```powershell
+.\scripts\Package-Release.ps1 -Version <ver>
+gh release create v<ver> --repo TravisDev/claudeOfflineHelper --title "Claude Desktop <ver>" `
+    --notes-file _release\v<ver>\RELEASE-NOTES.md _release\v<ver>\*.zip
+```
+
+Then update [CHECKSUMS.md](../CHECKSUMS.md) and `scripts/verify-checksums.sh`, and push.
+**Leave the previous release in place** — see the archive note at the end of this page.
+
+---
+
+## The 2 GiB asset limit
+
+GitHub rejects release assets over **2 GiB (2,048 MiB)**. The Windows offline MSIX is the
+one that matters:
+
+| Version | Offline MSIX (zipped asset) | Headroom under 2,048 MiB |
+|---|---|---|
+| 1.30096.5 | 1,839 MiB | 209 MiB |
+| 2.19675.0 | 1,901 MiB | 147 MiB |
+
+It grew 62 MiB in one release. At that rate **the next release or the one after will not
+fit as a single asset**, and `gh release create` will fail only after you have waited out
+a multi-gigabyte upload. `scripts/Package-Release.ps1` prints the headroom for every
+asset so you see it before uploading.
+
+When it stops fitting, the options are:
+
+1. **Split it** into parts under the limit and document the rejoin. The payload checksum
+   is still over the rejoined file, so verification is unchanged:
+
+   ```bash
+   split -b 1900m -d Claude-<ver>-x64-offline.msix.zip Claude-<ver>-x64-offline.msix.zip.part
+   # on the target:
+   cat Claude-<ver>-x64-offline.msix.zip.part* > Claude-<ver>-x64-offline.msix.zip
+   ```
+
+   ```bat
+   copy /b Claude-<ver>-x64-offline.msix.zip.part00+Claude-<ver>-x64-offline.msix.zip.part01 Claude-<ver>-x64-offline.msix.zip
+   ```
+
+2. **Host that one file elsewhere** (an internal artifact store, S3, Azure Blob) and
+   keep only a pointer plus its checksum in the release notes. The MSIX is an unmodified
+   official artifact, so it is the safest of the four to host separately.
+
+Do not rely on compression to rescue you: the MSIX is already a compressed container, so
+zipping it saved 0.1% in every release so far.
+
+---
+
 ## All download URLs
 
 These are fixed and always serve the current release.
@@ -148,10 +255,22 @@ Managed configuration survives an upgrade; it lives in the registry or
 
 ## Version pinning reality
 
-The `latest/redirect` URLs move without warning. On 2026-08-17 they served 1.30096.5 in
-the morning and **1.32352.0** by the evening — same URLs, different release, no notice.
-If you re-run a download expecting to reproduce an earlier bundle, you will silently get
-a newer one whose checksums do not match anything you recorded.
+The `latest/redirect` URLs move without warning, and have moved four times in six weeks:
+
+| Observed (UTC) | `latest` served |
+|---|---|
+| 2026-08-17, morning | 1.30096.5 |
+| 2026-08-17, evening | 1.32352.0 |
+| 2026-08-18 | 1.32352.1 |
+| 2026-10-02 | **2.19675.0** — a major version bump |
+
+Same URLs, different release, no notice. If you re-run a download expecting to reproduce
+an earlier bundle, you silently get a newer one whose checksums match nothing you
+recorded. A major bump is also the point at which internal formats change: between
+1.30096.5 and 2.19675.0 the app's embedded manifests switched quoting style (which broke
+the old inspection script), Linux gained a fourth VM file (`initrd-micro`), the Claude CLI
+went 2.1.229 → 2.1.286, and a new `claude-ssh` component appeared. The build is now
+manifest-driven so those changes are data, not code.
 
 **Versioned paths remain hosted and are the way to pin.** Once you know a release's
 version and commit hash, these keep working:
@@ -163,14 +282,19 @@ https://downloads.claude.ai/releases/linux/<x64|arm64>/<version>/Claude-<commit>
 https://downloads.claude.ai/vms/linux/<x64|arm64>/<bundle-sha>/<file>.zst
 ```
 
-For 1.30096.5 the commit hash is `6e13464cbd9c3dc0501fe5ecb0568e3d3e9ea77a`. Read it from
-any build with `scripts/inspect-deb-manifests.py`, or from the `Location` header of a
-`latest/redirect` request while that version is current.
+| Version | Commit | Built | VM bundle | Claude CLI |
+|---|---|---|---|---|
+| 1.30096.5 | `6e13464cbd9c3dc0501fe5ecb0568e3d3e9ea77a` | 2026-08-14 | `6d1538ba6fecc4e5c5583993c4b30bb1875f0f5a` | 2.1.229 |
+| 2.19675.0 | `5706e5524dba58b23e105c31c358df8ab0a95852` | 2026-10-01 | `882518393ed4ce89020bd48d99d5daf114999773` | 2.1.286 |
+
+Read the commit from any build with `scripts/inspect-deb-manifests.py`, or from the
+`Location` header of a `latest/redirect` request while that version is current.
 
 Two consequences worth planning around:
 
 1. **Record the version and commit hash the moment you download**, not later. It is the
    only way back to that exact build.
-2. **Your GitHub release is your version archive.** Do not prune old releases to save
-   space — and never mix artifacts pulled at different times into one release without
-   re-verifying, since `latest` may have moved between them.
+2. **Your GitHub releases are your version archive.** Do not delete old releases to save
+   space, and never mix artifacts pulled at different times into one release without
+   re-verifying, since `latest` may have moved between them. The 1.30096.5 release is
+   kept for exactly this reason.

@@ -13,9 +13,9 @@ Linux app supports the same mechanism, so this repo builds one.
 
 | If your target is | Use |
 |---|---|
-| Windows | `Claude-1.30096.5-x64-offline.msix`. Official, supported, zero Anthropic egress. **Best option.** |
+| Windows | `Claude-2.19675.0-x64-offline.msix`. Official, supported, zero Anthropic egress. **Best option.** |
 | Linux, and `downloads.claude.ai` **can** be allowlisted | The stock `.deb`. Supported, no maintenance burden. |
-| Linux, and `downloads.claude.ai` **cannot** be allowlisted | `claude-desktop_1.30096.5+offline1_amd64.deb`, built by this repo. Works, but unsupported — read [doc 11](11-BUILD-OFFLINE-DEB.md) first. |
+| Linux, and `downloads.claude.ai` **cannot** be allowlisted | `claude-desktop_2.19675.0+offline1_amd64.deb`, built by this repo. Works, but unsupported — read [doc 11](11-BUILD-OFFLINE-DEB.md) first. |
 | Headless or SSH-only | [Claude Code CLI](10-CLAUDE-CODE-CLI-BEDROCK.md). |
 
 Do not stage the **standard** Windows MSIX (267 MB) for an offline network — it fetches
@@ -26,17 +26,17 @@ its VM bundle at session start just like the stock `.deb`.
 ## Step 1: get the files
 
 Release page:
-**https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v1.30096.5**
+**https://github.com/TravisDev/claudeOfflineHelper/releases/tag/v2.19675.0**
 
 The repository is public — assets download anonymously, no token or GitHub account
 needed:
 
 ```bash
-curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/claude-desktop_1.30096.5+offline1_amd64.deb.zip
+curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v2.19675.0/claude-desktop_2.19675.0+offline1_amd64.deb.zip
 ```
 
 ```bash
-curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v1.30096.5/Claude-1.30096.5-x64-offline.msix.zip
+curl -LO https://github.com/TravisDev/claudeOfflineHelper/releases/download/v2.19675.0/Claude-2.19675.0-x64-offline.msix.zip
 ```
 
 Use `-L`. The first response is a 302 to the storage backend; without it you get a
@@ -45,19 +45,19 @@ zero-byte file that looks like a broken link.
 With `gh` installed, this works too and handles resume:
 
 ```bash
-gh release download v1.30096.5 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
+gh release download v2.19675.0 --repo TravisDev/claudeOfflineHelper --pattern "*.zip"
 ```
 
-All four assets together are 3.69 GB, so pull only what you need.
+All four assets together are 3.70 GB, so pull only what you need.
 
 Then unzip:
 
 ```bash
-unzip Claude-1.30096.5-x64-offline.msix.zip
+unzip Claude-2.19675.0-x64-offline.msix.zip
 ```
 
 ```powershell
-Expand-Archive .\Claude-1.30096.5-x64-offline.msix.zip -DestinationPath .
+Expand-Archive .\Claude-2.19675.0-x64-offline.msix.zip -DestinationPath .
 ```
 
 Verify the checksum against [CHECKSUMS.md](../CHECKSUMS.md) before going further.
@@ -99,13 +99,13 @@ Edit the region, profile, and model list first. Full key reference:
 ### Windows
 
 ```powershell
-.\windows\Install-Claude.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix
+.\windows\Install-Claude.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix
 ```
 
 Or directly:
 
 ```powershell
-Add-AppxPackage -Path .\Claude-1.30096.5-x64-offline.msix
+Add-AppxPackage -Path .\Claude-2.19675.0-x64-offline.msix
 ```
 
 Requirements: Windows 10 build 19041+ or Windows 11, x64 or Arm64, hardware
@@ -118,7 +118,7 @@ signed by `Anthropic, PBC` through DigiCert).
 cd linux && chmod +x install.sh && ./install.sh
 ```
 
-Or `sudo apt install ./claude-desktop_1.30096.5_amd64.deb`. Note that apt resolves this
+Or `sudo apt install ./claude-desktop_2.19675.0_amd64.deb`. Note that apt resolves this
 package's dependencies from **your distro's** archives, not Anthropic's — see
 [07 — Air-gapped Linux deps](07-AIRGAP-LINUX-DEPS.md) if the machine has no archive
 access either.

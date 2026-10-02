@@ -43,7 +43,7 @@ files are absent. So an offline Linux package can be built by putting the right 
 there — no patching, no binary modification.
 
 This repo does that: [`scripts/build-offline-deb.sh`](../scripts/build-offline-deb.sh)
-produces `claude-desktop_1.30096.5+offline1_amd64.deb` (1.6 GB), with every injected
+produces `claude-desktop_2.19675.0+offline1_amd64.deb` (1.5 GB), with every injected
 component verified against checksums compiled into the application. Full method and
 risks: [11 — Building an offline `.deb`](11-BUILD-OFFLINE-DEB.md).
 
@@ -74,8 +74,8 @@ In order of practicality:
 
 | Arch | File | SHA256 |
 |---|---|---|
-| amd64 | `claude-desktop_1.30096.5_amd64.deb` | `e699763dd0e33bd831a1c771ea2684ead894f2680f02c71693a4e345046bd8f5` |
-| arm64 | `claude-desktop_1.30096.5_arm64.deb` | `9de0fbb5300d80bbf91dc7e4a4d066bfd6bead3830a0d7ae6c8b0a8529cf59ea` |
+| amd64 | `claude-desktop_2.19675.0_amd64.deb` | `da476cf5b4f77f209cca4ab3558b94622b1c9dc6808bf1d9022352b9a1da8f9b` |
+| arm64 | `claude-desktop_2.19675.0_arm64.deb` | `55171972a988324fe6bcb6405506ff4deb42524d7e3cfefd88a6f85ce4660d5f` |
 
 Check your architecture:
 
@@ -92,9 +92,9 @@ Requirements: Ubuntu 22.04+ or Debian 12+, x86_64 or arm64.
 Unzip, verify, install:
 
 ```bash
-unzip claude-desktop_1.30096.5_amd64.deb.zip
+unzip claude-desktop_2.19675.0_amd64.deb.zip
 sha256sum -c <<'EOF'
-e699763dd0e33bd831a1c771ea2684ead894f2680f02c71693a4e345046bd8f5  claude-desktop_1.30096.5_amd64.deb
+da476cf5b4f77f209cca4ab3558b94622b1c9dc6808bf1d9022352b9a1da8f9b  claude-desktop_2.19675.0_amd64.deb
 EOF
 ```
 
@@ -115,7 +115,7 @@ chmod +x install.sh && ./install.sh
 or directly:
 
 ```bash
-sudo apt install ./claude-desktop_1.30096.5_amd64.deb
+sudo apt install ./claude-desktop_2.19675.0_amd64.deb
 ```
 
 Launch from your app menu, or run `claude-desktop`.
@@ -158,15 +158,16 @@ libxcb-dri3-0, libsecret-1-0, libc6 (>= 2.34), libxtst6, libuuid1,
 xdg-desktop-portal, xdg-desktop-portal-gtk | xdg-desktop-portal-gnome | xdg-desktop-portal-kde
 ```
 
-`Recommends` additionally pulls `qemu-system-x86`, `ovmf`, and `virtiofsd` — these back
-the sandboxed Cowork VM. **They are Recommends, not Depends, so apt installs them by
-default but the package will install without them.** A machine missing them installs
-fine and then fails to start Cowork sessions, which looks like a network problem and is
-not. Verify explicitly:
+`Recommends` additionally pulls `qemu-system-x86` and `ovmf`, which back the sandboxed Cowork
+VM. **They are Recommends, not Depends, so apt installs them by default but the package will
+install without them.** A machine missing them installs fine and then fails to start Cowork
+sessions, which looks like a network problem and is not. Verify explicitly:
 
 ```bash
-dpkg -l qemu-system-x86 ovmf virtiofsd
+dpkg -l qemu-system-x86 ovmf
 ```
+
+`virtiofsd` is also in the package's `Recommends`, but the `.deb` ships its own copy (`/usr/lib/claude-desktop/resources/virtiofsd`) and **Debian 12 has no `virtiofsd` package at all**, so apt silently skips that recommendation there. Do not put it in an apt command: on Debian 12 it aborts with `Unable to locate package virtiofsd`. Which copy the app actually uses, the bundled one or a system one, has not been established here. If sessions fail to start and your distro does package it, installing it is the cheap thing to try.
 
 Blocking Anthropic does not affect dependency resolution. Blocking your distro archives
 does — see [07 — Air-gapped Linux deps](07-AIRGAP-LINUX-DEPS.md).

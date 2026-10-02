@@ -26,7 +26,7 @@
     Use this script to inspect the payload or to triage, not to deploy.
 
 .EXAMPLE
-    .\Make-Portable.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix -OutDir .\Claude-Portable
+    .\Make-Portable.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix -OutDir .\Claude-Portable
 #>
 [CmdletBinding()]
 param(

@@ -1,57 +1,63 @@
 #!/bin/bash
 # Install the rebuilt offline .deb in a throwaway container and verify that the
-# preseed tree lands intact on disk.
+# preseed tree lands intact - checked against the SAME manifest the build used.
 #
-#   docker run --rm -v "<repo>:/work" debian:12 bash /work/scripts/test-offline-deb.sh
+#   docker run --rm -v "<repo>:/work" -e VERSION=2.19675.0 debian:12 \
+#       bash /work/scripts/test-offline-deb.sh
 #
-# This proves packaging and installation. It does NOT prove the app runs offline
-# - that needs a desktop session with downloads.claude.ai firewalled off.
+# This proves packaging and installation. It does NOT prove the app runs offline:
+# that needs a desktop session with downloads.claude.ai firewalled off. See
+# scripts/check-preseed-live.sh for that half.
 set -euo pipefail
 
-DEB="${DEB:-/work/_release/claude-desktop_1.30096.5+offline1_amd64.deb}"
+VERSION="${VERSION:?set VERSION, e.g. VERSION=2.19675.0}"
+ARCH="${ARCH:-amd64}"
+SUFFIX="${SUFFIX:-+offline1}"
+WORK="${WORK:-/work}"
+DEB="${DEB:-$WORK/_release/v${VERSION}/claude-desktop_${VERSION}${SUFFIX}_${ARCH}.deb}"
+MANIFEST="$WORK/manifests/${VERSION}.${ARCH}.preseed.sha256"
 PRESEED=/usr/lib/claude-desktop/resources/preseed
 
 say() { printf '\n==> %s\n' "$*"; }
+
+[ -f "$DEB" ]      || { echo "FAIL: missing $DEB" >&2; exit 1; }
+[ -f "$MANIFEST" ] || { echo "FAIL: missing $MANIFEST" >&2; exit 1; }
 
 say "Installing $(basename "$DEB")"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 # Let apt pull the real dependency set, exactly as it would on a target machine.
-apt-get install -y -qq "$DEB" 2>&1 | tail -20
+apt-get install -y -qq "$DEB" 2>&1 | tail -5
 
 say "Package state"
-dpkg -l claude-desktop | tail -2
+dpkg -l claude-desktop | tail -1
 dpkg -s claude-desktop | grep -E '^(Version|Installed-Size|Status):' | sed 's/^/  /'
 
 say "Preseed tree on disk"
-if [ ! -d "$PRESEED" ]; then
-  echo "  FAIL: $PRESEED does not exist" >&2
-  exit 1
-fi
-find "$PRESEED" -type f -printf '  %-58p %10s\n'
+[ -d "$PRESEED" ] || { echo "  FAIL: $PRESEED does not exist" >&2; exit 1; }
+( cd "$PRESEED" && find . -type f -printf '  %10s  %P\n' | sort -k2 )
 
-say "Checksums after installation"
+say "Checksums after installation (against $(basename "$MANIFEST"))"
+grep -vE '^\s*(#|$)' "$MANIFEST" > /tmp/want.sums
 fail=0
-check() {
-  got=$(sha256sum "$1" | cut -d' ' -f1)
-  if [ "$got" = "$2" ]; then
-    printf '  [ ok ] %s\n' "$(basename "$1")"
-  else
-    printf '  [FAIL] %s\n     expected %s\n     actual   %s\n' "$(basename "$1")" "$2" "$got"
-    fail=1
-  fi
-}
-check "$PRESEED/vm_bundle/vmlinuz.zst"     1bb4bc3aa0c0c797a2ca6134d2b7034a196e05d4deea7bb20f064ee353781f3b
-check "$PRESEED/vm_bundle/initrd.zst"      20214efcd451b3b74dc53ed80218c6e616bb2a101cafb18bc2c9bc91e559926b
-check "$PRESEED/vm_bundle/rootfs.img.zst"  bc64e0dbc039c30ce986ad3edd2d0cb38d57d78450be72b3a5d4e747c54bf482
-check "$PRESEED/claude-code/linux-x64.zst" c39722950b2cb1ceb2e1ffe4027fa89121150e3853b4f4f27a34e80a6e09cdbe
+( cd "$PRESEED" && sha256sum -c /tmp/want.sums ) | sed 's/^/  /' || fail=1
+
+say "No unexpected files in the preseed tree"
+want=$(awk '{print $2}' /tmp/want.sums | sort)
+have=$(cd "$PRESEED" && find . -type f -printf '%P\n' | sort)
+if [ "$want" = "$have" ]; then
+  echo "  exactly the $(echo "$want" | wc -l) manifest files, nothing extra"
+else
+  echo "  MISMATCH between manifest and installed tree:"
+  diff <(echo "$want") <(echo "$have") | sed 's/^/    /'
+  fail=1
+fi
 
 say "dpkg integrity verification"
-# dpkg --verify compares installed files against DEBIAN/md5sums.
 if dpkg --verify claude-desktop; then
   echo "  no discrepancies"
 else
-  echo "  (output above lists files that differ from md5sums)"
+  echo "  (files above differ from DEBIAN/md5sums)"; fail=1
 fi
 
 say "Binary present"
@@ -59,7 +65,7 @@ ls -l /usr/lib/claude-desktop/claude-desktop | sed 's/^/  /'
 command -v claude-desktop | sed 's/^/  on PATH: /' || echo "  not on PATH"
 
 if [ "$fail" -ne 0 ]; then
-  say "RESULT: checksum failures above"
+  say "RESULT: FAILED - see above"
   exit 1
 fi
 say "RESULT: package installs and the preseed tree is intact"

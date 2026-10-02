@@ -119,8 +119,10 @@ Run Anthropic's readiness checker on Windows — it verifies all of this in one 
 ### Missing Linux VM packages
 
 ```bash
-dpkg -l qemu-system-x86 ovmf virtiofsd | grep '^ii'
+dpkg -l qemu-system-x86 ovmf | grep '^ii'
 ```
+
+`virtiofsd` is also in the package's `Recommends`, but the `.deb` ships its own copy (`/usr/lib/claude-desktop/resources/virtiofsd`) and **Debian 12 has no `virtiofsd` package at all**, so apt silently skips that recommendation there. Do not put it in an apt command: on Debian 12 it aborts with `Unable to locate package virtiofsd`. Which copy the app actually uses, the bundled one or a system one, has not been established here. If sessions fail to start and your distro does package it, installing it is the cheap thing to try.
 
 These are `Recommends`, not `Depends` — the app installs fine without them and then fails
 at session start.

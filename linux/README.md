@@ -11,8 +11,8 @@ builds an offline package by injecting those components into `resources/preseed/
 
 | Package | Needs `downloads.claude.ai`? | Supported? |
 |---|---|---|
-| `claude-desktop_1.30096.5_amd64.deb` (stock) | Yes, at session start | Yes |
-| `claude-desktop_1.30096.5+offline1_amd64.deb` (built here) | No | **No** — modified vendor package |
+| `claude-desktop_2.19675.0_amd64.deb` (stock) | Yes, at session start | Yes |
+| `claude-desktop_2.19675.0+offline1_amd64.deb` (built here) | No | **No** — modified vendor package |
 
 Prefer allowlisting the one hostname if you possibly can; it is supported and needs no
 maintenance. Build the offline package only when that answer is a firm no, and read the
@@ -39,8 +39,8 @@ The `.deb` files are release assets, not in git.
 
 | Arch | File | SHA256 |
 |---|---|---|
-| amd64 | `claude-desktop_1.30096.5_amd64.deb` | `e699763dd0e33bd831a1c771ea2684ead894f2680f02c71693a4e345046bd8f5` |
-| arm64 | `claude-desktop_1.30096.5_arm64.deb` | `9de0fbb5300d80bbf91dc7e4a4d066bfd6bead3830a0d7ae6c8b0a8529cf59ea` |
+| amd64 | `claude-desktop_2.19675.0_amd64.deb` | `da476cf5b4f77f209cca4ab3558b94622b1c9dc6808bf1d9022352b9a1da8f9b` |
+| arm64 | `claude-desktop_2.19675.0_arm64.deb` | `55171972a988324fe6bcb6405506ff4deb42524d7e3cfefd88a6f85ce4660d5f` |
 
 ```bash
 dpkg --print-architecture   # which one you need
@@ -53,7 +53,7 @@ Ubuntu 22.04+ or Debian 12+.
 ## Install
 
 ```bash
-unzip claude-desktop_1.30096.5_amd64.deb.zip
+unzip claude-desktop_2.19675.0_amd64.deb.zip
 
 # configuration first
 sudo mkdir -p /etc/claude-desktop
@@ -76,12 +76,12 @@ apt resolves this package's dependencies from **your distro's** archives, not An
 Blocking Anthropic does not affect that; blocking your distro mirrors does — see
 [../docs/07-AIRGAP-LINUX-DEPS.md](../docs/07-AIRGAP-LINUX-DEPS.md).
 
-The catch worth knowing: `qemu-system-x86`, `ovmf`, and `virtiofsd` back the sandbox VM
+The catch worth knowing: `qemu-system-x86` and `ovmf` back the sandbox VM
 but are **Recommends, not Depends**. The package installs cleanly without them and then
 fails at session start, which looks like a network problem and is not.
 
 ```bash
-dpkg -l qemu-system-x86 ovmf virtiofsd | grep '^ii'
+dpkg -l qemu-system-x86 ovmf | grep '^ii'
 ls -l /dev/kvm
 ```
 

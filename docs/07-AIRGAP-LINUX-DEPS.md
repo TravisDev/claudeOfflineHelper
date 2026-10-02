@@ -25,8 +25,10 @@ xdg-desktop-portal-gtk | xdg-desktop-portal-gnome | xdg-desktop-portal-kde
 **Recommends** (install succeeds, Cowork then fails):
 
 ```
-qemu-system-x86 ovmf virtiofsd
+qemu-system-x86 ovmf
 ```
+
+`virtiofsd` is also in the package's `Recommends`, but the `.deb` ships its own copy (`/usr/lib/claude-desktop/resources/virtiofsd`) and **Debian 12 has no `virtiofsd` package at all**, so apt silently skips that recommendation there. Do not put it in an apt command: on Debian 12 it aborts with `Unable to locate package virtiofsd`. Which copy the app actually uses, the bundled one or a system one, has not been established here. If sessions fail to start and your distro does package it, installing it is the cheap thing to try.
 
 Do not skip the Recommends. They back the sandbox VM, and their absence produces a
 working-looking app whose agent sessions fail — a failure that reads like a network
@@ -46,7 +48,7 @@ sudo apt install --download-only --reinstall -y \
   libgtk-3-0 libnotify4 libnss3 xdg-utils libatspi2.0-0 libdrm2 libgbm1 \
   libxcb-dri3-0 libsecret-1-0 libxtst6 libuuid1 \
   xdg-desktop-portal xdg-desktop-portal-gtk \
-  qemu-system-x86 ovmf virtiofsd
+  qemu-system-x86 ovmf
 
 cp /var/cache/apt/archives/*.deb .
 ```
@@ -70,7 +72,7 @@ docker run --rm -it -v "$PWD:/out" ubuntu:22.04 bash -c '
     libgtk-3-0 libnotify4 libnss3 xdg-utils libatspi2.0-0 libdrm2 libgbm1 \
     libxcb-dri3-0 libsecret-1-0 libxtst6 libuuid1 \
     xdg-desktop-portal xdg-desktop-portal-gtk \
-    qemu-system-x86 ovmf virtiofsd
+    qemu-system-x86 ovmf
   cp /var/cache/apt/archives/*.deb /out/
 '
 ```
@@ -89,7 +91,7 @@ Then on the target:
 ```bash
 tar xzf claude-deps-*.tar.gz
 sudo dpkg -i *.deb || sudo apt install -f --no-download
-sudo apt install ./claude-desktop_1.30096.5_amd64.deb
+sudo apt install ./claude-desktop_2.19675.0_amd64.deb
 ```
 
 The `dpkg -i` then `apt install -f` sequence handles ordering — `dpkg` does not resolve
@@ -106,7 +108,7 @@ Turn the staged `.deb` files into a real repo so apt resolves dependencies prope
 sudo apt install dpkg-dev
 mkdir -p /srv/claude-repo && cd /srv/claude-repo
 cp ~/claude-deps/*.deb .
-cp claude-desktop_1.30096.5_amd64.deb .
+cp claude-desktop_2.19675.0_amd64.deb .
 dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 ```
 
@@ -135,7 +137,7 @@ crosses a network you do not fully control.
 sudo apt-get check
 
 # the VM backing packages are actually present
-dpkg -l qemu-system-x86 ovmf virtiofsd | grep '^ii'
+dpkg -l qemu-system-x86 ovmf | grep '^ii'
 
 # hardware virtualization is available
 grep -Eoc '(vmx|svm)' /proc/cpuinfo   # >0 on x86

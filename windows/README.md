@@ -37,8 +37,8 @@ screen your network blocks.
 **2. Then the app.**
 
 ```powershell
-Expand-Archive .\Claude-1.30096.5-x64-offline.msix.zip -DestinationPath .
-.\Install-Claude.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix
+Expand-Archive .\Claude-2.19675.0-x64-offline.msix.zip -DestinationPath .
+.\Install-Claude.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix
 ```
 
 **3. Verify.** Launch Claude → **Help → Troubleshooting → Copy Managed Configuration
@@ -50,15 +50,15 @@ Report**. It shows which keys were read and whether the Bedrock credentials vali
 
 | Package | Size | Behaviour |
 |---|---|---|
-| `Claude-1.30096.5-x64-offline.msix` | 1.80 GB | VM bundle + CLI built in. **No Anthropic egress.** |
-| Standard MSIX | 267 MB | Downloads both from `downloads.claude.ai` at session start |
+| `Claude-2.19675.0-x64-offline.msix` | 1.86 GB | VM bundle + CLI built in. **No Anthropic egress.** |
+| Standard MSIX | 292 MB | Downloads both from `downloads.claude.ai` at session start |
 | `Claude Setup.exe` | 6.9 MB | A bootstrapper with no payload. Useless offline. |
 
 Check which one you have:
 
 ```powershell
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path .\Claude-1.30096.5-x64-offline.msix))
+$z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path .\Claude-2.19675.0-x64-offline.msix))
 $z.Entries | Where-Object FullName -like '*preseed/vm_bundle/rootfs.vhdx.zst' | Select-Object FullName
 $z.Dispose()
 ```
@@ -94,7 +94,7 @@ What you probably want instead — **MSIX installs into the user profile and nor
 no admin rights**:
 
 ```powershell
-Add-AppxPackage -Path .\Claude-1.30096.5-x64-offline.msix
+Add-AppxPackage -Path .\Claude-2.19675.0-x64-offline.msix
 Get-AppxPackage -Name Claude | Remove-AppxPackage   # clean, complete removal
 ```
 

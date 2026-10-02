@@ -2,85 +2,80 @@
 # Build an OFFLINE Claude Desktop .deb by injecting the preseed tree that the
 # Linux app already knows how to read but that Anthropic does not ship.
 #
-# Anthropic publishes an offline installer variant for Windows and macOS only.
-# The Linux build nonetheless contains the full preseed code path:
+# Anthropic publishes offline installers for Windows and macOS only. The Linux
+# build nonetheless carries the full preseed code path: at session start it looks
+# in resources/preseed/ before downloading anything.
 #
-#   var x2t=`preseed`, S2t=`vm_bundle`, AU=`claude-code`;
-#   function jU(){ return path.join(process.resourcesPath, x2t) }
-#   D.info(`[preseed] staging VM bundle cache ${r}.zst from package`);
-#   D.info(`[preseed] installing Claude CLI ${e.platform} from package`);
-#
-# So dropping the right files at resources/preseed/ makes the Linux app stage
-# them locally instead of downloading from downloads.claude.ai.
+# This script is MANIFEST-DRIVEN. The expected checksums live in
+#   manifests/<VERSION>.<ARCH>.preseed.sha256
+# and the script injects exactly the files listed there, after verifying each one.
+# To support a new Claude Desktop version, write a new manifest (see
+# scripts/inspect-deb-manifests.py --emit) - this script does not change.
 #
 # Run inside a Debian container (see docs/11-BUILD-OFFLINE-DEB.md):
-#   docker run --rm -v "<repo>:/work" debian:12 bash /work/scripts/build-offline-deb.sh
+#   docker run --rm -v "<repo>:/work" -e VERSION=2.19675.0 debian:12 \
+#       bash /work/scripts/build-offline-deb.sh
 set -euo pipefail
 
+VERSION="${VERSION:?set VERSION, e.g. VERSION=2.19675.0}"
 ARCH="${ARCH:-amd64}"
-VERSION="${VERSION:-1.30096.5}"
 SUFFIX="${SUFFIX:-+offline1}"
 WORK="${WORK:-/work}"
 
-SRC_DEB="$WORK/linux/claude-desktop_${VERSION}_${ARCH}.deb"
-PRESEED="$WORK/_preseed"
-OUTDIR="$WORK/_release"
+MANIFEST="$WORK/manifests/${VERSION}.${ARCH}.preseed.sha256"
+PRESEED="${PRESEED:-$WORK/_preseed/$VERSION}"
+OUTDIR="$WORK/_release/v${VERSION}"
 OUT_DEB="$OUTDIR/claude-desktop_${VERSION}${SUFFIX}_${ARCH}.deb"
 
-# Checksums compiled into app 1.30096.5. These are over the COMPRESSED .zst
-# artifacts, not the decompressed files.
-SHA_VMLINUZ="1bb4bc3aa0c0c797a2ca6134d2b7034a196e05d4deea7bb20f064ee353781f3b"
-SHA_INITRD="20214efcd451b3b74dc53ed80218c6e616bb2a101cafb18bc2c9bc91e559926b"
-SHA_ROOTFS="bc64e0dbc039c30ce986ad3edd2d0cb38d57d78450be72b3a5d4e747c54bf482"
-SHA_CLI="c39722950b2cb1ceb2e1ffe4027fa89121150e3853b4f4f27a34e80a6e09cdbe"
+# Locate the stock package this build starts from.
+SRC_DEB=""
+for c in "$WORK/_staging/v$VERSION/claude-desktop_${VERSION}_${ARCH}.deb" \
+         "$WORK/linux/claude-desktop_${VERSION}_${ARCH}.deb"; do
+  [ -f "$c" ] && { SRC_DEB="$c"; break; }
+done
 
 say() { printf '\n==> %s\n' "$*"; }
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+[ -f "$MANIFEST" ] || die "No manifest: $MANIFEST"
+[ -n "$SRC_DEB" ]  || die "Stock claude-desktop_${VERSION}_${ARCH}.deb not found in _staging/ or linux/"
+[ -d "$PRESEED" ]  || die "Preseed directory missing: $PRESEED"
 
 say "Installing build tools"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq xz-utils zstd file >/dev/null
 
-[ -f "$SRC_DEB" ] || { echo "Missing source package: $SRC_DEB" >&2; exit 1; }
+say "Source package"
+echo "  $(basename "$SRC_DEB")  (control Version: $(dpkg-deb -f "$SRC_DEB" Version))"
+SRC_VER=$(dpkg-deb -f "$SRC_DEB" Version)
+[ "$SRC_VER" = "$VERSION" ] || die "Package is $SRC_VER but VERSION=$VERSION - refusing to mix versions"
 
-say "Verifying preseed inputs"
-verify() {
-  local f="$1" want="$2"
-  [ -f "$f" ] || { echo "MISSING: $f" >&2; exit 1; }
-  local got
-  got=$(sha256sum "$f" | cut -d' ' -f1)
-  if [ "$got" != "$want" ]; then
-    echo "CHECKSUM MISMATCH: $f" >&2
-    echo "  expected $want" >&2
-    echo "  actual   $got" >&2
-    exit 1
-  fi
-  printf '  ok  %-18s %s\n' "$(basename "$f")" "${want:0:16}..."
-}
-verify "$PRESEED/vm_bundle/vmlinuz.zst"      "$SHA_VMLINUZ"
-verify "$PRESEED/vm_bundle/initrd.zst"       "$SHA_INITRD"
-verify "$PRESEED/vm_bundle/rootfs.img.zst"   "$SHA_ROOTFS"
-verify "$PRESEED/claude-code/linux-x64.zst"  "$SHA_CLI"
+say "Verifying preseed inputs against $(basename "$MANIFEST")"
+# Strip comments/blank lines; sha256sum -c fails the whole run on any mismatch,
+# any missing file, and prints which one.
+grep -vE '^\s*(#|$)' "$MANIFEST" > /tmp/preseed.sums
+( cd "$PRESEED" && sha256sum -c /tmp/preseed.sums ) | sed 's/^/  /' \
+  || die "Preseed verification failed. Do not build."
+COUNT=$(wc -l < /tmp/preseed.sums)
+echo "  $COUNT/$COUNT components verified"
 
 BUILD=/build
 rm -rf "$BUILD"; mkdir -p "$BUILD"
 
 say "Unpacking $(basename "$SRC_DEB")"
 dpkg-deb -R "$SRC_DEB" "$BUILD/pkg"
-
 RES="$BUILD/pkg/usr/lib/claude-desktop/resources"
-[ -d "$RES" ] || { echo "Unexpected layout: $RES not found" >&2; exit 1; }
+[ -d "$RES" ] || die "Unexpected layout: $RES not found"
 
-say "Injecting preseed tree"
-mkdir -p "$RES/preseed/vm_bundle" "$RES/preseed/claude-code"
-cp "$PRESEED/vm_bundle/vmlinuz.zst"     "$RES/preseed/vm_bundle/"
-cp "$PRESEED/vm_bundle/initrd.zst"      "$RES/preseed/vm_bundle/"
-cp "$PRESEED/vm_bundle/rootfs.img.zst"  "$RES/preseed/vm_bundle/"
-cp "$PRESEED/claude-code/linux-x64.zst" "$RES/preseed/claude-code/"
-chmod 644 "$RES/preseed/vm_bundle/"*.zst "$RES/preseed/claude-code/"*.zst
+say "Injecting preseed tree (exactly the files in the manifest)"
+while read -r _sum rel; do
+  install -D -m 644 "$PRESEED/$rel" "$RES/preseed/$rel"
+done < /tmp/preseed.sums
 find "$RES/preseed" -type d -exec chmod 755 {} +
 chown -R root:root "$RES/preseed"
-du -sh "$RES/preseed"
+( cd "$RES/preseed" && find . -type f -printf '  %10s  %P\n' | sort -k2 )
+du -sh "$RES/preseed" | sed 's/^/  total: /'
 
 say "Updating control metadata"
 CONTROL="$BUILD/pkg/DEBIAN/control"
@@ -103,13 +98,11 @@ mkdir -p "$OUTDIR"
 XZ_OPT="-T0" dpkg-deb -Zxz -z1 --build "$BUILD/pkg" "$OUT_DEB"
 
 say "Result"
-ls -lh "$OUT_DEB" | awk '{print "  " $9 "  " $5}'
+ls -l "$OUT_DEB" | awk '{printf "  %s  %.1f MB\n", $9, $5/1048576}'
 sha256sum "$OUT_DEB" | sed 's/^/  /'
+dpkg-deb -f "$OUT_DEB" Version Architecture Installed-Size | sed 's/^/  /'
+echo "  --- preseed as packaged ---"
+dpkg-deb -c "$OUT_DEB" | grep -E 'preseed/.+\.zst' | awk '{printf "  %12s  %s\n", $3, $6}'
 
-say "Verifying the built package"
-dpkg-deb -I "$OUT_DEB" | sed 's/^/  /'
-echo "  --- preseed contents as packaged ---"
-dpkg-deb -c "$OUT_DEB" | grep preseed | awk '{printf "  %-12s %s\n", $3, $6}'
-
-rm -rf "$BUILD"
+rm -rf "$BUILD" /tmp/preseed.sums
 say "Done: $OUT_DEB"

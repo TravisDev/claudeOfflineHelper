@@ -9,7 +9,7 @@
     Deploy your managed configuration BEFORE running this. See docs/03-BEDROCK-CONFIG.md.
 
 .EXAMPLE
-    .\Install-Claude.ps1 -MsixPath .\Claude-1.30096.5-x64-offline.msix
+    .\Install-Claude.ps1 -MsixPath .\Claude-2.19675.0-x64-offline.msix
 
 .EXAMPLE
     .\Install-Claude.ps1 -MsixPath .\Claude.msix -SkipChecksum -AllUsers
@@ -19,8 +19,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$MsixPath,
 
-    # SHA256 of the 1.30096.5 x64 offline package. Override for other versions.
-    [string]$ExpectedSha256 = 'c2ae7281a3d10e74abfdd430359da813ada90fd5b9eefb0db2212e574ac0895a',
+    # SHA256 of the 2.19675.0 x64 offline package. Override for other versions.
+    [string]$ExpectedSha256 = '91c8cf150700331bdf6e87dcb3ac036effa98ce379697999197ddeeb0105687f',
 
     [switch]$SkipChecksum,
 
