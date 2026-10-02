@@ -5,7 +5,7 @@ document explains how to build one yourself, why it works, and what you are taki
 doing it.
 
 > **This is unsupported.** You are modifying a vendor package. Anthropic did not publish
-> this configuration and will not support it. Read [Risks](#risks-read-before-deploying)
+> this configuration and will not support it. Read [Risks](#risks--read-before-deploying)
 > before putting it on a fleet.
 >
 > **If you are redistributing the result publicly**, note that the rebuilt package keeps
